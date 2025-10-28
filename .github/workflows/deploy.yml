@@ -1,0 +1,58 @@
+name: 部署到腾讯云
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v3
+    
+    - name: 设置 Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: 安装依赖
+      run: npm ci
+    
+    - name: 构建项目
+      run: npm run build
+    
+    - name: 登录腾讯云容器镜像服务
+      run: |
+        docker login --username=${{ secrets.TENCENT_CLOUD_USERNAME }} \
+          --password=${{ secrets.TENCENT_CLOUD_PASSWORD }} \
+          ccr.ccs.tencentyun.com
+    
+    - name: 构建 Docker 镜像
+      run: |
+        docker build -t monster-tech-portal:${{ github.sha }} .
+        docker tag monster-tech-portal:${{ github.sha }} \
+          ccr.ccs.tencentyun.com/${{ secrets.TENCENT_CLOUD_NAMESPACE }}/monster-tech-portal:latest
+        docker tag monster-tech-portal:${{ github.sha }} \
+          ccr.ccs.tencentyun.com/${{ secrets.TENCENT_CLOUD_NAMESPACE }}/monster-tech-portal:${{ github.sha }}
+    
+    - name: 推送镜像到腾讯云
+      run: |
+        docker push ccr.ccs.tencentyun.com/${{ secrets.TENCENT_CLOUD_NAMESPACE }}/monster-tech-portal:latest
+        docker push ccr.ccs.tencentyun.com/${{ secrets.TENCENT_CLOUD_NAMESPACE }}/monster-tech-portal:${{ github.sha }}
+    
+    - name: 部署通知
+      run: |
+        echo "✅ 镜像已成功推送到腾讯云容器镜像服务"
+        echo "📦 镜像地址: ccr.ccs.tencentyun.com/${{ secrets.TENCENT_CLOUD_NAMESPACE }}/monster-tech-portal:latest"
+        echo "🚀 请登录腾讯云控制台更新容器实例"
+
+    # 可选：自动更新 TKE 部署（需要配置 kubeconfig）
+    # - name: 更新 TKE 部署
+    #   run: |
+    #     kubectl set image deployment/monster-tech-portal \
+    #       monster-tech-portal=ccr.ccs.tencentyun.com/${{ secrets.TENCENT_CLOUD_NAMESPACE }}/monster-tech-portal:${{ github.sha }}
+
