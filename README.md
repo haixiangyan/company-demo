@@ -174,6 +174,7 @@ company-demo/
 - 📖 [快速开始指南](./QUICKSTART.md) - 快速部署到腾讯云
 - 📚 [详细部署文档](./DEPLOY.md) - 完整的部署说明和最佳实践
 - 🔧 [Makefile 命令](./Makefile) - 便捷的开发和部署命令
+- 🔍 [故障排查指南](./TROUBLESHOOTING.md) - 常见问题解决方案
 
 ## 常用命令速查
 
